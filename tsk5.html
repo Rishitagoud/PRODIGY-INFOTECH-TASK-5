@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather App</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    .bg-video {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      min-width: 100%;
+      min-height: 100%;
+      z-index: -1;
+      object-fit: cover;
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(0,0,0,0.3);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      margin: 5px;
+    }
+    #weatherData {
+      margin-top: 20px;
+      font-size: 18px;
+      background: rgba(0,0,0,0.4);
+      padding: 15px;
+      border-radius: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Main page background video: autoplay muted -->
+  <video id="bgVideo" class="bg-video" autoplay muted loop playsinline>
+    <source src="normal_v.mp4" type="video/mp4" />
+    Your browser does not support the video tag.
+  </video>
+
+  <div class="container">
+    <h1>Weather App</h1>
+    <input type="text" id="locationInput" placeholder="Enter city name">
+    <button onclick="getWeather()">Get Weather</button>
+    <div id="weatherData"></div>
+  </div>
+
+  <script>
+    const apiKey = 'be62ab580fe55088a162987a11465100'; // Your API key
+
+    function getWeather() {
+      const location = document.getElementById('locationInput').value;
+      if (!location) {
+        alert('Please enter a city name');
+        return;
+      }
+
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${apiKey}&units=metric`;
+
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          if (data.cod === 200) {
+            displayWeather(data);
+          } else {
+            document.getElementById('weatherData').innerText = 'City not found!';
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+
+    function displayWeather(data) {
+      const temp = data.main.temp;
+      const humidity = data.main.humidity;
+      const description = data.weather[0].description;
+      const location = data.name + ', ' + data.sys.country;
+
+      document.getElementById('weatherData').innerHTML = `
+        <h2>${location}</h2>
+        <p><strong>Temperature:</strong> ${temp} °C</p>
+        <p><strong>Humidity:</strong> ${humidity}%</p>
+        <p><strong>Condition:</strong> ${description}</p>
+      `;
+
+      updateBackgroundVideo(description.toLowerCase());
+    }
+
+    function updateBackgroundVideo(condition) {
+      const video = document.getElementById('bgVideo');
+      const source = video.querySelector('source');
+
+      let videoFile = 'normal_v.mp4'; // default
+      let muted = true;
+
+      if (condition.includes('rain')) {
+        videoFile = 'rainy_v.mp4';
+        muted = false;
+      } else if (condition.includes('cloud')) {
+        videoFile = 'cloudy_v.mp4';
+        muted = false;
+      } else if (condition.includes('clear') || condition.includes('sun')) {
+        videoFile = 'sunny_v.mp4';
+        muted = false;
+      } else if (condition.includes('mist') || condition.includes('fog')) {
+        videoFile = 'foggy_v.mp4';
+        muted = false;
+      }
+
+      if (source.getAttribute('src') !== videoFile) {
+        source.setAttribute('src', videoFile);
+        video.muted = muted;
+        video.load();
+        video.play();
+      }
+    }
+  </script>
+
+</body>
+</html>
